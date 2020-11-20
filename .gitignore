@@ -124,3 +124,10 @@ buildNumber.properties
 
 #shade plugin maven
 dependency-reduced-pom.xml
+
+Summary-Processes
+Summary-Results
+install_*.html
+*.exe
+stdout.txt
+user_guide.html
