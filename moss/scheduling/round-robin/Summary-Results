@@ -1,0 +1,12 @@
+Scheduling Type: Batch (Nonpreemptive)
+Scheduling Name: Round Robin scheduling
+Simulation Run Time: 1125
+Mean: 125
+Standard Deviation: 0
+Process #	CPU Time	Delay	CPU Completed	CPU Blocked
+0		125 (ms)	0 (ms)		125 (ms)	1 times
+1		125 (ms)	50 (ms)		125 (ms)	1 times
+2		125 (ms)	130 (ms)	125 (ms)	1 times
+3		125 (ms)	190 (ms)	125 (ms)	1 times
+4		125 (ms)	210 (ms)	125 (ms)	1 times
+5		125 (ms)	1000 (ms)	125 (ms)	1 times

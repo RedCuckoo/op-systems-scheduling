@@ -124,5 +124,3 @@ buildNumber.properties
 
 #shade plugin maven
 dependency-reduced-pom.xml
-
-moss/
