@@ -2,41 +2,78 @@
 // the scheduling algorithm written by the user resides.
 // User modification should occur within the Run() function.
 
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Vector;
+import javax.sql.rowset.Joinable;
+import java.awt.image.renderable.RenderableImage;
+import java.util.*;
 import java.io.*;
 
 public class SchedulingAlgorithm {
+    private enum ProcessState {
+        REGISTERED,
+        COMPLETED,
+        JOINED,
+        FORCEDOUT
+    }
+
+    private static void print(int time, PrintStream out, ProcessState state, sProcess process, Vector<sProcess> processVector) {
+        print(time, out, state, process, processVector, false);
+    }
+
+    private static void print(int time, PrintStream out, ProcessState state, sProcess process, Vector<sProcess> processVector, boolean quantumExpired) {
+        out.print(time + "ms ");
+        switch (state) {
+            case REGISTERED:
+                out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                break;
+            case COMPLETED:
+                if (quantumExpired) {
+                    out.println("Quantum time expired");
+                } else {
+
+                    out.println("Quantum time reset");
+                }
+                out.println("Process: " + processVector.indexOf(process) + " completed... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                break;
+            case JOINED:
+                out.println("Process joined queue");
+                out.println("Process: " + processVector.indexOf(process) + " (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                break;
+            case FORCEDOUT:
+                out.println("Quantum time expired");
+                out.println("Process: " + processVector.indexOf(process) + " forced out... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                break;
+        }
+
+    }
+
     public static Results Run(int quantum, int runtime, Vector<sProcess> processVector, Results result) {
         int comptime = 0;
         int size = processVector.size();
         int completed = 0;
+
         String resultsFile = "Summary-Processes";
 
-        Vector<sProcess> sortedProcessVector = processVector;
+        Vector<sProcess> sortedProcessVector = (Vector<sProcess>) processVector.clone();
         sortedProcessVector.sort(new sProcessComparator());
 
         Queue<sProcess> queue = new LinkedList<>();
 
         result.schedulingType = "Batch (Nonpreemptive)";
         result.schedulingName = "Round Robin scheduling";
+
+        int lastProcessIndex = 0;
+        sProcess process = null;
+        int quantumCounter = 0;
+
         try {
             PrintStream out = new PrintStream(new FileOutputStream(resultsFile));
-
-            int lastProcessIndex = 0;
-            sProcess process = null;
-            int quantumCounter = 0;
-
             while (comptime < runtime) {
                 //add entered processes
                 if (lastProcessIndex < size) {
                     while (sortedProcessVector.elementAt(lastProcessIndex).delay == comptime) {
                         sProcess processCopy = sortedProcessVector.elementAt(lastProcessIndex);
                         queue.add(processCopy);
-                        out.println("Process joined queue");
-                        out.println("Process: " + processVector.indexOf(processCopy) + " (" + processCopy.cputime + " " + processCopy.delay + " " + processCopy.cpudone + ")");
-
+                        print(comptime, out, ProcessState.JOINED, processCopy, processVector);
                         ++lastProcessIndex;
                         if (lastProcessIndex >= size) {
                             break;
@@ -46,18 +83,18 @@ public class SchedulingAlgorithm {
 
                 if (process == null && !queue.isEmpty()) {
                     process = queue.peek();
-                    out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                    print(comptime, out, ProcessState.REGISTERED, process, processVector);
                 }
 
                 if (process != null && process.cpudone == process.cputime) {
                     completed++;
+
+                    print(comptime, out, ProcessState.COMPLETED, process, processVector, quantumCounter == quantum);
+
                     quantumCounter = 0;
-                    out.println("Quantum time reset");
-                    out.println("Process: " + processVector.indexOf(process) + " completed... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
 
                     if (completed == size) {
                         result.compuTime = comptime;
-                        out.close();
                         return result;
                     }
 
@@ -65,7 +102,7 @@ public class SchedulingAlgorithm {
 
                     if (!queue.isEmpty()) {
                         process = queue.peek();
-                        out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                        print(comptime, out, ProcessState.REGISTERED, process, processVector);
                     } else {
                         process = null;
                     }
@@ -75,12 +112,13 @@ public class SchedulingAlgorithm {
                 if (quantumCounter == quantum) {
                     quantumCounter = 0;
                     process.numblocked++;
-                    out.println("Quantum time expired");
-                    out.println("Process: " + processVector.indexOf(process) + " forced out... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+
+                    print(comptime, out, ProcessState.FORCEDOUT, process, processVector, true);
 
                     queue.add(queue.poll());
                     process = queue.peek();
-                    out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+
+                    print(comptime, out, ProcessState.REGISTERED, process, processVector);
                 }
 
                 if (process != null) {
@@ -90,11 +128,12 @@ public class SchedulingAlgorithm {
 
                 comptime++;
             }
+
             out.close();
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        
+
         result.compuTime = comptime;
         return result;
     }

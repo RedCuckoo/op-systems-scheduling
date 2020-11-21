@@ -114,6 +114,7 @@ public class Scheduling {
             out.println("Simulation Run Time: " + result.compuTime);
             out.println("Mean: " + meanDev);
             out.println("Standard Deviation: " + standardDev);
+            out.println("Quantum Time: " + quantum);
             out.println("Process #\tCPU Time\tDelay\tCPU Completed\tCPU Blocked");
             for (i = 0; i < processVector.size(); i++) {
                 sProcess process = (sProcess) processVector.elementAt(i);
