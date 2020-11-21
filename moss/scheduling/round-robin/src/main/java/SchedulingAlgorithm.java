@@ -8,12 +8,8 @@ import java.util.Vector;
 import java.io.*;
 
 public class SchedulingAlgorithm {
-
     public static Results Run(int quantum, int runtime, Vector<sProcess> processVector, Results result) {
-        int i = 0;
         int comptime = 0;
-        //int currentProcess = 0;
-        int previousProcess = 0;
         int size = processVector.size();
         int completed = 0;
         String resultsFile = "Summary-Processes";
@@ -26,51 +22,31 @@ public class SchedulingAlgorithm {
         result.schedulingType = "Batch (Nonpreemptive)";
         result.schedulingName = "Round Robin scheduling";
         try {
-            //BufferedWriter out = new BufferedWriter(new FileWriter(resultsFile));
-            //OutputStream out = new FileOutputStream(resultsFile);
             PrintStream out = new PrintStream(new FileOutputStream(resultsFile));
 
-
             int lastProcessIndex = 0;
-
-            for (sProcess s : sortedProcessVector) {
-                if (s.delay == 0) {
-                    queue.add(s);
-                    ++lastProcessIndex;
-                } else {
-                    break;
-                }
-            }
-
-
             sProcess process = null;
-
-            if (!queue.isEmpty()) {
-                process = (sProcess) sortedProcessVector.elementAt(0);
-                out.println("Process: " + processVector.indexOf(sortedProcessVector.elementAt(0)) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
-            }
-
             int quantumCounter = 0;
-
-            //System.out.println(processVector.size());
 
             while (comptime < runtime) {
                 //add entered processes
-                if (lastProcessIndex < sortedProcessVector.size()) {
+                if (lastProcessIndex < size) {
                     while (sortedProcessVector.elementAt(lastProcessIndex).delay == comptime) {
-                        queue.add(sortedProcessVector.elementAt(lastProcessIndex));
+                        sProcess processCopy = sortedProcessVector.elementAt(lastProcessIndex);
+                        queue.add(processCopy);
                         out.println("Process joined queue");
-                        out.println("Process: " + processVector.indexOf(sortedProcessVector.elementAt(lastProcessIndex)) + " (" + sortedProcessVector.elementAt(lastProcessIndex).cputime + " " + sortedProcessVector.elementAt(lastProcessIndex).delay + " " + sortedProcessVector.elementAt(lastProcessIndex).cpudone + ")");
+                        out.println("Process: " + processVector.indexOf(processCopy) + " (" + processCopy.cputime + " " + processCopy.delay + " " + processCopy.cpudone + ")");
 
                         ++lastProcessIndex;
-                        if (lastProcessIndex >= sortedProcessVector.size()) {
+                        if (lastProcessIndex >= size) {
                             break;
                         }
                     }
                 }
 
-                if (process == null && !queue.isEmpty()){
+                if (process == null && !queue.isEmpty()) {
                     process = queue.peek();
+                    out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
                 }
 
                 if (process != null && process.cpudone == process.cputime) {
@@ -78,6 +54,7 @@ public class SchedulingAlgorithm {
                     quantumCounter = 0;
                     out.println("Quantum time reset");
                     out.println("Process: " + processVector.indexOf(process) + " completed... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+
                     if (completed == size) {
                         result.compuTime = comptime;
                         out.close();
@@ -89,13 +66,10 @@ public class SchedulingAlgorithm {
                     if (!queue.isEmpty()) {
                         process = queue.peek();
                         out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
-                    }
-                    else{
+                    } else {
                         process = null;
                     }
                 }
-
-                //TODO: check empty queue???
 
                 //if quantum time expired
                 if (quantumCounter == quantum) {
@@ -105,11 +79,11 @@ public class SchedulingAlgorithm {
                     out.println("Process: " + processVector.indexOf(process) + " forced out... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
 
                     queue.add(queue.poll());
-                        process = queue.peek();
-                        out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
+                    process = queue.peek();
+                    out.println("Process: " + processVector.indexOf(process) + " registered... (" + process.cputime + " " + process.delay + " " + process.cpudone + ")");
                 }
 
-                if (process != null){
+                if (process != null) {
                     quantumCounter++;
                     process.cpudone++;
                 }
@@ -117,7 +91,10 @@ public class SchedulingAlgorithm {
                 comptime++;
             }
             out.close();
-        } catch (IOException e) { /* Handle exceptions */ }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
         result.compuTime = comptime;
         return result;
     }
